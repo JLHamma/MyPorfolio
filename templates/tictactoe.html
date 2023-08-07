@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='./css/styles_tictactoe.css') }}">
+    <title>Tic Tac Toe</title>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-md-center">
+            <div class="col col-lg-4">
+                <h3>Tic Tac Toe</h3>
+                <p>Player is 'X' and Computer is 'O'.</p>
+                <p>Player goes first.</p><br>
+                <button id="play-again-btn" onclick="resetGame()">Play Again</button>
+            </div>
+            <div class="col-md-auto">
+                <div class="grid-container">
+                    {% for row in range(3) %}
+                    <div class="grid-row">
+                        {% for col in range(3) %}
+                        <div class="box" id="box{{ row }}{{ col }}" onclick="onBoxClick({{ row }}, {{ col }})"></div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function onBoxClick(row, col) {
+            fetch(`/move?row=${row}&col=${col}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.valid) {
+                        const box = document.querySelector(`#box${row}${col}`);
+                        box.textContent = 'X';  // Update the content to 'X'
+
+                        if (data.winner || data.draw) {
+                            alert(`Player wins!`);
+                            document.getElementById('play-again-btn').disabled = false;  // Enable "Play Again" button
+                        } else {
+                            performComputerMove();  // Call the function for computer's move
+                        }
+                    }
+                });
+        }
+
+        function performComputerMove() {
+            fetch(`/computer_move`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.valid) {
+                        const computerBox = document.querySelector(`#box${data.row}${data.col}`);
+                        computerBox.textContent = 'O';  // Update the content to 'O'
+
+                        if (data.winner) {
+                            alert(`Computer wins!`);
+                            document.getElementById('play-again-btn').disabled = false;  // Enable "Play Again" button
+                        } else if (data.draw) {
+                            alert("It's a draw!");
+                            document.getElementById('play-again-btn').disabled = false;  // Enable "Play Again" button
+                        }
+                    }
+                });
+        }
+
+        function resetGame() {
+            fetch('/reset', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === "Game has been reset.") {
+                        // Reset the grid on the page to its initial state
+                        const boxes = document.querySelectorAll('.box');
+                        boxes.forEach(box => {
+                            box.textContent = '';
+                        });
+                        // Enable the "Play Again" button
+                        document.getElementById('play-again-btn').disabled = true;
+                    }
+                });
+        }
+
+    </script>
+</body>
+</html>
+
